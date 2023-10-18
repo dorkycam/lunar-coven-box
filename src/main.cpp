@@ -10,6 +10,11 @@
 #include "BoxMagic.h"
 #include "rfid_lights.h"
 
+#define REDPIN 5
+#define GREENPIN 6
+#define BLUEPIN 3
+#define FADESPEED 5     // make this higher to slow down
+
 // for RFID scanner driver setup?
 MFRC522 mfrc522(10, 9);
 
@@ -25,9 +30,10 @@ const int stepsPerRevolution = 2038;
 
 // Creates an instance of stepper class
 // Pins entered in sequence IN1-IN3-IN2-IN4 for proper step sequence
-Stepper myStepper = Stepper(stepsPerRevolution, 6, 4, 5, 3);
+Stepper myStepper = Stepper(stepsPerRevolution, 8, 4, 7, 2);
 
 bool boxIsOpen = false;
+
 
 void setup() {
     Serial.begin(9600);
@@ -44,11 +50,23 @@ void setup() {
     pinMode(7, OUTPUT);
 
     Serial.println("Setup complete! (but check for errors)");
+
+    pinMode(REDPIN, OUTPUT);
+    pinMode(GREENPIN, OUTPUT);
+    pinMode(BLUEPIN, OUTPUT);
 }
 
 void loop() {
     // set speed of stepper motor
     myStepper.setSpeed(18);
+      int r, g, b;
+      r = 0;
+      g = 0;
+      b = 0;
+
+      analogWrite(REDPIN, 100);
+      analogWrite(BLUEPIN, 100);
+      
 
     if (!goalManager.isNewNfcFound()) {
         if (game.isAllGoalsScanned()) {
@@ -80,6 +98,33 @@ void loop() {
 
         // ledManager.turnOnLight(scannedGoal);
         // ledManager.setTwinkle(scannedGoal, true);
+
+        for (r; r < random(r, 256); r++) { 
+            analogWrite(REDPIN, r);
+            delay(FADESPEED);
+        } 
+        for (g; g < random(g, 256); g++) { 
+            analogWrite(GREENPIN, g);
+            delay(FADESPEED);
+        } 
+        for (b; b < random(b, 256); b++) { 
+            analogWrite(BLUEPIN, b);
+            delay(FADESPEED);
+        } 
+
+        // fade down  
+        for (r; r > 100; r--) { 
+            analogWrite(REDPIN, r);
+            delay(FADESPEED);
+        } 
+        for (g; g > 0; g--) { 
+            analogWrite(GREENPIN, g);
+            delay(FADESPEED);
+        } 
+        for (b; b > 100; b--) { 
+            analogWrite(BLUEPIN, b);
+            delay(FADESPEED);
+        } 
 
         Serial.println("Succesfully scanned goal");
         return;
