@@ -1,5 +1,4 @@
 #include "BoxMagic.h"
-
 #include "rfid_lights.h"
 
 BoxMagic::BoxMagic() {
@@ -35,18 +34,11 @@ bool BoxMagic::isGameFinished() {
 }
 
 bool BoxMagic::scanGoal(int goalNum) {
-    // Serial.println("GOAL VALUES: ");
-    // for (int i = 0; i < GOAL_COUNT; i++) {
-    //     Serial.println(this->goals[i]);
-    // }
-
     if (this->goals[goalNum]) {
-         Serial.println("Goal ALready Scannerered ");
         return false;
     }
     this->goals[goalNum] = true;
 
-    Serial.println("Goal not scanned yetee ");
     return true;
 }
 
