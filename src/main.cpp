@@ -6,9 +6,8 @@
 #include <Stepper.h>
 
 #include "GoalManager.h"
-#include "LedManager.h"
-#include "BoxMagic.h"
-#include "rfid_lights.h"
+#include "RGBManager.h"
+#include "TagManager.h"
 
 #define REDPIN 5
 #define GREENPIN 6
@@ -18,11 +17,7 @@
 // for RFID scanner driver setup?
 MFRC522 mfrc522(10, 9);
 
-// for LED driver setup
-Adafruit_AW9523 aw;
-
-BoxMagic game;
-// LedManager ledManager(&aw);
+RGBManager rgbManager(REDPIN, GREENPIN, BLUEPIN, FADESPEED);
 GoalManager goalManager(&mfrc522);
 
 // Defines the number of steps per rotation
@@ -33,7 +28,9 @@ const int stepsPerRevolution = 2038;
 Stepper myStepper = Stepper(stepsPerRevolution, 8, 4, 7, 2);
 
 bool boxIsOpen = false;
-
+int TOP_LED_PULSE = LED_MAX;
+int BOTTOM_LED_PULSE = 100;
+int PULSE_INCR = false;
 
 void setup() {
     Serial.begin(9600);
@@ -54,79 +51,68 @@ void setup() {
     pinMode(REDPIN, OUTPUT);
     pinMode(GREENPIN, OUTPUT);
     pinMode(BLUEPIN, OUTPUT);
+
+    rgbManager.setRGB(LED_MAX, 0, LED_MAX);
+
 }
 
 void loop() {
     // set speed of stepper motor
     myStepper.setSpeed(18);
-      int r, g, b;
-      r = 0;
-      g = 0;
-      b = 0;
-
-      analogWrite(REDPIN, 100);
-      analogWrite(BLUEPIN, 100);
       
 
     if (!goalManager.isNewNfcFound()) {
-        if (game.isAllGoalsScanned()) {
+        if (goalManager.isAllGoalsScanned()) {
             if (!boxIsOpen) {
                 myStepper.step(-(stepsPerRevolution / 2));
                 Serial.println("Game is finished");
                 boxIsOpen = true;
+
+                rgbManager.fadeToRGB(LED_MAX, LED_MAX, LED_MAX);
             }
             return;
         }
 
+        rgbManager.pulse();
         return;
     }
 
     if (goalManager.isResetFound()) {
-        game.resetGame();
+        goalManager.resetGoals();
         myStepper.step(stepsPerRevolution / 2);
-        // ledManager.setAllLightsBrightness(0);
+
+        rgbManager.fadeToRGB(LED_MAX, 0, LED_MAX);
+
         boxIsOpen = false;
         return;
     }
 
-    int scannedGoal = goalManager.getFoundGoal();
-    if (scannedGoal != -1) {
-        if (!game.scanGoal(scannedGoal)) {
-            Serial.println("Already scanned this goal");
-            return;
+    if (!goalManager.GOAL_ONE_SCANNED && !goalManager.GOAL_TWO_SCANNED && !goalManager.GOAL_THREE_SCANNED) {
+         Serial.println("still at one");
+        if (goalManager.isGoalOneScanned()) {
+            Serial.println("goal one scanned");
+            rgbManager.fadeToRGB(0, 100, LED_MAX);
         }
-
-        // ledManager.turnOnLight(scannedGoal);
-        // ledManager.setTwinkle(scannedGoal, true);
-
-        for (r; r < random(r, 256); r++) { 
-            analogWrite(REDPIN, r);
-            delay(FADESPEED);
-        } 
-        for (g; g < random(g, 256); g++) { 
-            analogWrite(GREENPIN, g);
-            delay(FADESPEED);
-        } 
-        for (b; b < random(b, 256); b++) { 
-            analogWrite(BLUEPIN, b);
-            delay(FADESPEED);
-        } 
-
-        // fade down  
-        for (r; r > 100; r--) { 
-            analogWrite(REDPIN, r);
-            delay(FADESPEED);
-        } 
-        for (g; g > 0; g--) { 
-            analogWrite(GREENPIN, g);
-            delay(FADESPEED);
-        } 
-        for (b; b > 100; b--) { 
-            analogWrite(BLUEPIN, b);
-            delay(FADESPEED);
-        } 
-
-        Serial.println("Succesfully scanned goal");
         return;
     }
+
+    if (goalManager.GOAL_ONE_SCANNED && !goalManager.GOAL_TWO_SCANNED && !goalManager.GOAL_THREE_SCANNED) {
+         Serial.println("got to two");
+        if (goalManager.isGoalTwoScanned()) {
+             Serial.println("goal two scanned");
+            rgbManager.fadeToRGB(LED_MAX, 0, 0);
+        }
+        return;
+    }
+
+    if (goalManager.GOAL_ONE_SCANNED && goalManager.GOAL_TWO_SCANNED && !goalManager.GOAL_THREE_SCANNED) {
+         Serial.println("got to three");
+        if (goalManager.isGoalThreeScanned()) {
+            Serial.println("goal three scanned");
+            rgbManager.rainbowAnimation();
+            rgbManager.rainbowAnimation();
+            rgbManager.rainbowAnimation();
+        }
+    }
+
 }

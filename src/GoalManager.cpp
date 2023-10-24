@@ -2,9 +2,12 @@
 
 #include <Arduino.h>
 
-#include "rfid_lights.h"
+#include "TagManager.h"
 
 GoalManager::GoalManager(MFRC522* controller) : nfc(controller) {
+    GOAL_ONE_SCANNED = false;
+    GOAL_TWO_SCANNED = false;
+    GOAL_THREE_SCANNED = false;
 }
 
 bool GoalManager::isNewNfcFound() {
@@ -29,8 +32,10 @@ bool GoalManager::isNewNfcFound() {
     return true;
 }
 
+// GOAL RELATED FUNCTIONS
+
 bool GoalManager::isResetFound() {
-    if (uidEqual(reset, lastUid)) {
+    if (isGoalFound(RESET_TAGS, 2)) {
         Serial.println("Reset found");
         return true;
     }
@@ -38,10 +43,10 @@ bool GoalManager::isResetFound() {
     return false;
 }
 
-int GoalManager::getFoundGoal() {
+int GoalManager::getFoundGoal(Tag goals[], int goalCount) {
     int foundGoal = -1;
-    for (int i = 0; i < GOAL_COUNT; i++) {
-        if (uidEqual(GOALS[i].rfid, lastUid)) {
+    for (int i = 0; i < goalCount; i++) {
+        if (uidEqual(goals[i].rfid, lastUid)) {
             foundGoal = i;
             break;
         }
@@ -50,6 +55,69 @@ int GoalManager::getFoundGoal() {
     return foundGoal;
 }
 
+bool GoalManager::isGoalFound(Tag goals[], int goalCount) {
+    return getFoundGoal(goals, goalCount) > -1;
+}
+
+bool GoalManager::isGoalOneScanned() {
+    int foundGoal = -1;
+    for (int i = 0; i < GOAL_ONE_COUNT; i++) {
+        if (uidEqual(GOAL_ONES[i].rfid, lastUid)) {
+            foundGoal = i;
+            break;
+        }
+    }
+
+    GOAL_ONE_SCANNED = foundGoal > -1;
+
+    return GOAL_ONE_SCANNED;
+}
+
+bool GoalManager::isGoalTwoScanned() {
+    int foundGoal = -1;
+    for (int i = 0; i < GOAL_TWO_COUNT; i++) {
+        if (uidEqual(GOAL_TWOS[i].rfid, lastUid)) {
+            foundGoal = i;
+            break;
+        }
+    }
+
+    GOAL_TWO_SCANNED = foundGoal > -1;
+
+    return GOAL_TWO_SCANNED;
+}
+
+bool GoalManager::isGoalThreeScanned() {
+    int foundGoal = -1;
+    for (int i = 0; i < GOAL_THREE_COUNT; i++) {
+        if (uidEqual(GOAL_THREES[i].rfid, lastUid)) {
+            foundGoal = i;
+            break;
+        }
+    }
+
+    GOAL_THREE_SCANNED = foundGoal > -1;
+
+    return GOAL_THREE_SCANNED;
+}
+
+bool GoalManager::isAllGoalsScanned() {
+    if (GOAL_ONE_SCANNED && GOAL_TWO_SCANNED && GOAL_THREE_SCANNED) {
+       return true;
+    }
+
+    return false;
+}
+
+void GoalManager::resetGoals() {
+    GOAL_ONE_SCANNED = false;
+    GOAL_TWO_SCANNED = false;
+    GOAL_THREE_SCANNED = false;
+    return;
+}
+
+
+// UTILITY FUNCTIONS
 void GoalManager::printUuid(uint8_t uuid[]) {
     Serial.print("{");
     for (int i = 0; i < 10; i++) {
